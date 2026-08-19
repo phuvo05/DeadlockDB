@@ -120,7 +120,10 @@ function renderBloomResult(payload) {
   const applications = (payload.applications || []).map((application) =>
     `<li>${escapeHtml(application)}</li>`
   ).join("");
-  const rate = `${(Number(payload.estimated_false_positive_rate || 0) * 100).toFixed(2)}%`;
+  const rateValue = Number(payload.estimated_false_positive_rate || 0) * 100;
+  const rate = rateValue > 0 && rateValue < 0.01
+    ? `${rateValue.toExponential(2)}%`
+    : `${rateValue.toFixed(2)}%`;
   elements.result.innerHTML = `<div class="result-summary">
     <div class="metric"><span class="metric-label">Bit array</span><span class="metric-value">${escapeHtml(payload.bit_size)}</span></div>
     <div class="metric"><span class="metric-label">Hash functions</span><span class="metric-value">${escapeHtml(payload.hash_count)}</span></div>

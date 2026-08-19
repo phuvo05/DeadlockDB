@@ -30,6 +30,7 @@ class Timeline:
             "elapsed_ms": round((time.monotonic() - self.started_at) * 1000, 2),
         }
         item.update(details)
+        item["run_id"] = self.run_id
         self.events.append(item)
         log_fields = " ".join(f"{key}={value}" for key, value in item.items() if key != "message")
         logger.info("%s message=%s", log_fields, message)

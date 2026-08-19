@@ -26,3 +26,18 @@ def test_bloom_filter_interpretation_is_safe(client) -> None:
             assert check["interpretation"] == "POSSIBLY_PRESENT"
         else:
             assert check["interpretation"] == "DEFINITELY_ABSENT"
+
+
+def test_bloom_filter_demo_has_deterministic_content(client) -> None:
+    first = client.post("/api/demo/bloom-filter").json()
+    second = client.post("/api/demo/bloom-filter").json()
+
+    for payload in (first, second):
+        payload.pop("run_id")
+        payload.pop("duration_ms")
+        for event in payload["events"]:
+            event.pop("run_id")
+            event.pop("timestamp")
+            event.pop("elapsed_ms")
+
+    assert first == second

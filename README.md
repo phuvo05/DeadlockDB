@@ -294,7 +294,7 @@ The sample filter is rebuilt for every request. A production system would size t
     POST /api/demo/bloom-filter
     GET  /api/debug/db
 
-Demo responses contain:
+Deadlock demo responses contain:
 
     run_id
     mode
@@ -309,6 +309,8 @@ Demo responses contain:
     duration_ms
 
 An event contains an ISO timestamp, transaction ID, event type, message, and elapsed milliseconds.
+
+The Bloom Filter response uses the common `run_id`, `mode`, `demo_completed`, `events`, and `duration_ms` fields plus `bit_size`, `hash_count`, `inserted_items`, `checks`, `estimated_false_positive_rate`, and `applications`. It intentionally has no transaction, victim, balance, or SQLSTATE fields.
 
 ## PostgreSQL inspection
 

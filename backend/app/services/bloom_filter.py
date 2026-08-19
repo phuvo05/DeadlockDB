@@ -6,9 +6,9 @@ class BloomFilter:
     """A deterministic in-memory Bloom Filter for educational demos."""
 
     def __init__(self, bit_size: int = 1024, hash_count: int = 4) -> None:
-        if bit_size <= 0:
+        if isinstance(bit_size, bool) or not isinstance(bit_size, int) or bit_size <= 0:
             raise ValueError("bit_size must be positive")
-        if hash_count <= 0:
+        if isinstance(hash_count, bool) or not isinstance(hash_count, int) or hash_count <= 0:
             raise ValueError("hash_count must be positive")
         self._bit_size = bit_size
         self._hash_count = hash_count
@@ -50,7 +50,7 @@ class BloomFilter:
         digest = sha256(encoded).digest()
         secondary = sha1(encoded).digest()
         hash_a = int.from_bytes(digest[:8], "big")
-        hash_b = int.from_bytes(secondary[:8], "big") or 1
+        hash_b = int.from_bytes(secondary[:8], "big") % self._bit_size or 1
         return [
             (hash_a + index * hash_b) % self._bit_size
             for index in range(self._hash_count)

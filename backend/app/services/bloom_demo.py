@@ -22,6 +22,7 @@ CHECK_ITEMS = (
 APPLICATIONS = (
     "Cache/database lookup guard",
     "Email or URL duplicate detection",
+    "Duplicate work filtering in ingestion pipelines",
     "Rate-limit and abuse pre-check",
 )
 

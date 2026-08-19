@@ -35,3 +35,18 @@ def test_false_positive_rate_is_bounded_and_grows_with_insertions() -> None:
 def test_invalid_filter_parameters_are_rejected(kwargs: dict[str, int]) -> None:
     with pytest.raises(ValueError):
         BloomFilter(**kwargs)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [{"bit_size": 1.5}, {"hash_count": 1.5}, {"bit_size": True}],
+)
+def test_non_integer_filter_parameters_are_rejected(kwargs: dict[str, object]) -> None:
+    with pytest.raises(ValueError):
+        BloomFilter(**kwargs)
+
+
+def test_hash_probes_keep_a_nonzero_effective_step() -> None:
+    bloom = BloomFilter()
+
+    assert len(set(bloom._positions("probe:778"))) == bloom.hash_count
