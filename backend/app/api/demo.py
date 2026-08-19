@@ -4,7 +4,11 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from app.models.schemas import DemoResponse
-from app.services.deadlock_demo import run_deadlock_demo
+from app.services.deadlock_demo import (
+    run_deadlock_demo,
+    run_retry_demo,
+    run_safe_ordering_demo,
+)
 
 
 router = APIRouter(prefix="/api/demo")
@@ -28,3 +32,13 @@ async def _run_demo(runner) -> DemoResponse:
 @router.post("/deadlock", response_model=DemoResponse)
 async def deadlock_demo() -> DemoResponse:
     return await _run_demo(run_deadlock_demo)
+
+
+@router.post("/safe-ordering", response_model=DemoResponse)
+async def safe_ordering_demo() -> DemoResponse:
+    return await _run_demo(run_safe_ordering_demo)
+
+
+@router.post("/retry", response_model=DemoResponse)
+async def retry_demo() -> DemoResponse:
+    return await _run_demo(run_retry_demo)
