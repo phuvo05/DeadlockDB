@@ -42,6 +42,27 @@ class TransactionResult(BaseModel):
     deadlock_victim: bool = False
 
 
+class BloomCheckResult(BaseModel):
+    value: str
+    inserted: bool
+    maybe_present: bool
+    interpretation: Literal["POSSIBLY_PRESENT", "DEFINITELY_ABSENT"]
+
+
+class BloomFilterResponse(BaseModel):
+    run_id: str
+    mode: Literal["bloom-filter"]
+    demo_completed: bool
+    bit_size: int
+    hash_count: int
+    inserted_items: list[str]
+    checks: list[BloomCheckResult]
+    estimated_false_positive_rate: float
+    applications: list[str]
+    events: list[dict[str, Any]]
+    duration_ms: float
+
+
 class DemoResponse(BaseModel):
     run_id: str
     mode: Literal["deadlock", "safe-ordering", "retry"]

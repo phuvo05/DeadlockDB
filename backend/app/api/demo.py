@@ -1,10 +1,12 @@
 import asyncio
+from collections.abc import Awaitable, Callable
 import logging
 
 from fastapi import APIRouter, HTTPException
 import psycopg
 
-from app.models.schemas import DemoResponse
+from app.models.schemas import BloomFilterResponse, DemoResponse
+from app.services.bloom_demo import run_bloom_filter_demo
 from app.services.deadlock_demo import (
     run_deadlock_demo,
     run_retry_demo,
@@ -15,7 +17,12 @@ from app.services.coordinator import demo_lock
 
 router = APIRouter(prefix="/api/demo")
 logger = logging.getLogger("deadlock_lab.api.demo")
-async def _run_demo(runner) -> DemoResponse:
+
+
+DemoResult = DemoResponse | BloomFilterResponse
+
+
+async def _run_demo(runner: Callable[[], Awaitable[DemoResult]]) -> DemoResult:
     if demo_lock.locked():
         raise HTTPException(status_code=409, detail="Another demo is already running")
     async with demo_lock:
@@ -44,3 +51,8 @@ async def safe_ordering_demo() -> DemoResponse:
 @router.post("/retry", response_model=DemoResponse)
 async def retry_demo() -> DemoResponse:
     return await _run_demo(run_retry_demo)
+
+
+@router.post("/bloom-filter", response_model=BloomFilterResponse)
+async def bloom_filter_demo() -> BloomFilterResponse:
+    return await _run_demo(run_bloom_filter_demo)

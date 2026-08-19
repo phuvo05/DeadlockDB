@@ -23,6 +23,7 @@ class Timeline:
     ) -> dict[str, Any]:
         item: dict[str, Any] = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
+            "run_id": self.run_id,
             "transaction": transaction,
             "event": event,
             "message": message,
