@@ -7,8 +7,11 @@ def test_root_serves_deadlock_lab_controls(client) -> None:
         "trigger-deadlock",
         "safe-ordering",
         "retry-demo",
+        "bloom-filter-demo",
         "reset-database",
         "timeline",
         "result",
     ):
         assert f'id="{control_id}"' in response.text
+    assert "Bloom Filter" in response.text
+    assert 'data-mode="bloom-filter"' in response.text

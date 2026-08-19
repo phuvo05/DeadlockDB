@@ -65,9 +65,11 @@ function updateBalances(payload) {
     elements.total.textContent = money(payload.total_balance);
     elements.invariantTotal.textContent = Number(payload.total_balance).toLocaleString("en-US");
   }
-  const ok = payload.invariant_ok !== false;
-  elements.invariantStatus.textContent = ok ? "A + B = 2,000 ✓" : "DATA INTEGRITY ERROR";
-  elements.invariantStatus.classList.toggle("bad", !ok);
+  if (payload.invariant_ok !== undefined) {
+    const ok = payload.invariant_ok !== false;
+    elements.invariantStatus.textContent = ok ? "A + B = 2,000 ✓" : "DATA INTEGRITY ERROR";
+    elements.invariantStatus.classList.toggle("bad", !ok);
+  }
 }
 
 function setBusy(busy) {
@@ -104,7 +106,36 @@ function explanation(mode, payload) {
   return "The first attempt created a real deadlock. The victim rolled back, waited with bounded backoff and jitter, then retried the complete transaction and committed.";
 }
 
+function renderBloomResult(payload) {
+  elements.resultBadge.textContent = "Probabilistic lookup";
+  elements.resultBadge.className = "result-badge neutral";
+  const checks = (payload.checks || []).map((check) => {
+    const statusClass = check.maybe_present ? "bloom-maybe" : "bloom-absent";
+    const groundTruth = check.inserted ? "Inserted sample" : "Not inserted";
+    return `<article class="bloom-check ${statusClass}">
+      <header><strong>${escapeHtml(check.value)}</strong><span>${escapeHtml(check.interpretation)}</span></header>
+      <p>${escapeHtml(groundTruth)} · maybe_present=${escapeHtml(check.maybe_present)}</p>
+    </article>`;
+  }).join("");
+  const applications = (payload.applications || []).map((application) =>
+    `<li>${escapeHtml(application)}</li>`
+  ).join("");
+  const rate = `${(Number(payload.estimated_false_positive_rate || 0) * 100).toFixed(2)}%`;
+  elements.result.innerHTML = `<div class="result-summary">
+    <div class="metric"><span class="metric-label">Bit array</span><span class="metric-value">${escapeHtml(payload.bit_size)}</span></div>
+    <div class="metric"><span class="metric-label">Hash functions</span><span class="metric-value">${escapeHtml(payload.hash_count)}</span></div>
+    <div class="metric"><span class="metric-label">Inserted items</span><span class="metric-value">${escapeHtml(payload.inserted_items?.length || 0)}</span></div>
+    <div class="metric"><span class="metric-label">Estimated false positives</span><span class="metric-value">${escapeHtml(rate)}</span></div>
+  </div><div class="bloom-list">${checks}</div>
+  <div class="bloom-applications"><span class="metric-label">Useful applications</span><ul>${applications}</ul></div>
+  <p class="explanation">False means definitely absent. True only means possibly present, so production code must confirm positive matches against the source of truth.</p>`;
+}
+
 function renderResult(payload) {
+  if (payload.mode === "bloom-filter") {
+    renderBloomResult(payload);
+    return;
+  }
   const deadlock = payload.deadlock_detected;
   elements.resultBadge.textContent = deadlock ? "Deadlock observed" : "Completed safely";
   elements.resultBadge.className = `result-badge ${deadlock ? "danger" : "success"}`;
@@ -134,6 +165,9 @@ async function refreshAccounts() {
 async function runDemo(mode) {
   clearError();
   setBusy(true);
+  elements.loading.textContent = mode === "bloom-filter"
+    ? "Building an in-memory Bloom Filter…"
+    : "Running two PostgreSQL transactions…";
   elements.runId.textContent = "Running…";
   try {
     const payload = await requestJson(`/api/demo/${mode}`, { method: "POST" });
