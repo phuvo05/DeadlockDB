@@ -133,13 +133,14 @@ Expected:
 
 Reset restores both balances without deleting the named Docker volume. Expected result: both balances are 1000 and total_balance is 2000.
 
-### 6. Run the three demos
+### 6. Run the demos
 
 From the UI, click one button at a time. Or call:
 
     curl -X POST http://localhost:8000/api/demo/deadlock
     curl -X POST http://localhost:8000/api/demo/safe-ordering
     curl -X POST http://localhost:8000/api/demo/retry
+    curl -X POST http://localhost:8000/api/demo/bloom-filter
 
 The UI disables buttons while a run is active. The backend also rejects overlapping runs with HTTP 409.
 
@@ -247,6 +248,41 @@ Expected final state:
 
 The response still marks the initially selected transaction as deadlock_victim=true and preserves its original SQLSTATE 40P01.
 
+## Bloom Filter demo
+
+Bloom Filter mode is an in-memory, deterministic demonstration of probabilistic membership checks. It does not use PostgreSQL, Redis, or a persistent data structure.
+
+Run it with:
+
+    curl -X POST http://localhost:8000/api/demo/bloom-filter
+
+The demo inserts five sample values into a 1024-bit array and checks each value against four deterministic hash positions. Double hashing derives the positions from two standard-library digests:
+
+    position_i = (hash_a + i * hash_b) % bit_size
+
+The response shows the inserted ground truth separately from the Bloom Filter result:
+
+- `maybe_present=false` means the value is definitely absent from the inserted set.
+- `maybe_present=true` means the value is possibly present. A false positive is possible, so this is not proof of membership.
+- Inserted values must never produce a false negative.
+
+Common applications include:
+
+- avoiding an unnecessary cache or database lookup when a key is definitely absent;
+- checking whether an email, URL, content hash, or event has probably been seen before;
+- filtering duplicate work in ingestion and crawling pipelines;
+- performing a cheap rate-limit or abuse pre-check before a more expensive source-of-truth lookup.
+
+| Trade-off | Bloom Filter behavior |
+| --- | --- |
+| Memory and lookup cost | Compact bit array and constant-time checks |
+| False negatives | Not allowed for correctly inserted values |
+| False positives | Possible and increase as the filter fills |
+| Deletion | Not supported by this basic filter |
+| Source of truth | Still required after `maybe_present=true` |
+
+The sample filter is rebuilt for every request. A production system would size the filter for its expected item count and error rate, choose an appropriate lifecycle, and keep the authoritative lookup behind every possible positive result.
+
 ## API reference
 
     GET  /api/health
@@ -255,6 +291,7 @@ The response still marks the initially selected transaction as deadlock_victim=t
     POST /api/demo/deadlock
     POST /api/demo/safe-ordering
     POST /api/demo/retry
+    POST /api/demo/bloom-filter
     GET  /api/debug/db
 
 Demo responses contain:
@@ -302,9 +339,9 @@ Run the full suite:
 
 Expected output currently includes:
 
-    9 passed
+    16 passed
 
-The suite covers application startup, frontend assets, health, initial state, reset, a real parameterized transfer, real deadlock SQLSTATE 40P01, victim-independent assertions, safe ordering, bounded retry, and the final invariant.
+The suite covers application startup, frontend assets, health, initial state, reset, a real parameterized transfer, real deadlock SQLSTATE 40P01, victim-independent assertions, safe ordering, bounded retry, Bloom Filter membership semantics, the Bloom Filter API contract, and the final invariant.
 
 ## Logs
 
@@ -449,4 +486,3 @@ Delete the local database volume too:
     docker compose down -v
 
 Expected: the next docker compose up --build initializes PostgreSQL from postgres/init.sql again.
-
