@@ -1,4 +1,5 @@
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 import psycopg
 from psycopg import AsyncConnection
@@ -16,6 +17,7 @@ async def get_connection(application_name: str | None = None) -> AsyncConnection
     return connection
 
 
+@asynccontextmanager
 async def connection_scope(application_name: str | None = None) -> AsyncIterator[AsyncConnection]:
     connection = await get_connection(application_name)
     try:

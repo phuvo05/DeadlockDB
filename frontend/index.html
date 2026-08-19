@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PostgreSQL Deadlock Lab</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Concurrency playground</p>
+          <h1>PostgreSQL Deadlock Lab</h1>
+          <p class="subtitle">Transaction → row lock → wait → deadlock → resolve</p>
+        </div>
+        <div class="status-pill" id="service-status">Checking database…</div>
+      </header>
+
+      <section class="panel intro-panel">
+        <div>
+          <p class="eyebrow">Learning objective</p>
+          <h2>See the lock graph happen</h2>
+          <p>
+            Every demo uses two independent PostgreSQL connections. Watch the timeline to
+            compare a circular wait with ordinary lock contention.
+          </p>
+        </div>
+        <div class="equation">A + B = <strong id="invariant-total">2,000</strong></div>
+      </section>
+
+      <section class="balance-grid" aria-label="Account balances">
+        <article class="account-card account-a">
+          <div class="account-mark">A</div>
+          <div>
+            <p class="card-label">Account A</p>
+            <p class="balance" id="balance-a">—</p>
+          </div>
+        </article>
+        <article class="account-card account-b">
+          <div class="account-mark">B</div>
+          <div>
+            <p class="card-label">Account B</p>
+            <p class="balance" id="balance-b">—</p>
+          </div>
+        </article>
+        <article class="total-card">
+          <p class="card-label">Invariant</p>
+          <p class="total" id="total-balance">—</p>
+          <p class="invariant" id="invariant-status">Checking…</p>
+        </article>
+      </section>
+
+      <section class="panel controls-panel">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Run a scenario</p>
+            <h2>Choose how the transactions acquire locks</h2>
+          </div>
+          <button class="button button-secondary" id="reset-database" type="button">Reset database</button>
+        </div>
+        <div class="button-grid">
+          <button class="button button-danger" id="trigger-deadlock" data-mode="deadlock" type="button">
+            <span>Trigger deadlock</span><small>Opposite lock order</small>
+          </button>
+          <button class="button button-safe" id="safe-ordering" data-mode="safe-ordering" type="button">
+            <span>Safe lock ordering</span><small>Ascending account IDs</small>
+          </button>
+          <button class="button button-retry" id="retry-demo" data-mode="retry" type="button">
+            <span>Deadlock + retry</span><small>Rollback, backoff, retry</small>
+          </button>
+        </div>
+        <p class="loading" id="loading-message" hidden>Running two PostgreSQL transactions…</p>
+      </section>
+
+      <section class="content-grid">
+        <section class="panel timeline-panel">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Live run trace</p>
+              <h2>Transaction timeline</h2>
+            </div>
+            <span class="run-id" id="run-id">No run yet</span>
+          </div>
+          <div class="timeline" id="timeline">
+            <p class="empty-state">Choose a scenario to see PostgreSQL events.</p>
+          </div>
+        </section>
+
+        <section class="panel result-panel" id="result">
+          <div class="section-heading compact">
+            <div>
+              <p class="eyebrow">Outcome</p>
+              <h2>What happened?</h2>
+            </div>
+            <span class="result-badge neutral" id="result-badge">Waiting</span>
+          </div>
+          <div id="result-content">
+            <p class="empty-state">Run a demo to see the deadlock victim, SQLSTATE, and final state.</p>
+          </div>
+        </section>
+      </section>
+
+      <div class="toast" id="error-message" role="alert" hidden></div>
+    </main>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

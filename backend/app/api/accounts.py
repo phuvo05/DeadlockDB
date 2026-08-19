@@ -10,6 +10,7 @@ from app.models.schemas import (
     HealthResponse,
     ResetResponse,
 )
+from app.services.coordinator import demo_lock
 
 
 router = APIRouter(prefix="/api")
@@ -87,8 +88,11 @@ async def accounts() -> AccountsResponse:
 
 @router.post("/reset", response_model=ResetResponse)
 async def reset() -> ResetResponse:
+    if demo_lock.locked():
+        raise HTTPException(status_code=409, detail="Another demo is already running")
     try:
-        result = await reset_accounts()
+        async with demo_lock:
+            result = await reset_accounts()
         return ResetResponse(**result.model_dump())
     except Exception as exc:
         logger.exception("account reset failed")

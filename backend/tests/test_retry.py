@@ -4,6 +4,7 @@ def test_retry_replays_deadlock_victim_and_eventually_commits(client) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["deadlock_detected"] is True
+    assert any(transaction["sqlstate"] == "40P01" for transaction in payload["transactions"])
     assert all(transaction["status"] == "COMMITTED" for transaction in payload["transactions"])
     assert any(
         transaction["deadlock_victim"] and transaction["attempts"] >= 2

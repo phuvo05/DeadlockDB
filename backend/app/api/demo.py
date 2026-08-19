@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from fastapi import APIRouter, HTTPException
+import psycopg
 
 from app.models.schemas import DemoResponse
 from app.services.deadlock_demo import (
@@ -9,13 +10,11 @@ from app.services.deadlock_demo import (
     run_retry_demo,
     run_safe_ordering_demo,
 )
+from app.services.coordinator import demo_lock
 
 
 router = APIRouter(prefix="/api/demo")
 logger = logging.getLogger("deadlock_lab.api.demo")
-demo_lock = asyncio.Lock()
-
-
 async def _run_demo(runner) -> DemoResponse:
     if demo_lock.locked():
         raise HTTPException(status_code=409, detail="Another demo is already running")
@@ -24,6 +23,9 @@ async def _run_demo(runner) -> DemoResponse:
             return await runner()
         except HTTPException:
             raise
+        except psycopg.OperationalError as exc:
+            logger.exception("database unavailable during demo")
+            raise HTTPException(status_code=503, detail="Database unavailable") from exc
         except Exception as exc:
             logger.exception("demo execution failed")
             raise HTTPException(status_code=500, detail="Demo failed unexpectedly") from exc
